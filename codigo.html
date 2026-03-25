@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA CONTABLE TOTAL | ING. MARTÍNEZ RIVERA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617; --sidebar-bg: #0f172a; --card-bg: #1e293b;
+            --primary: #38bdf8; --success: #10b981; --danger: #f43f5e;
+            --warning: #fbbf24; --border: #334155; --text: #f8fafc; --accent: #6366f1;
+        }
+
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-dark); color: var(--text); font-size: 11px; overflow-x: hidden; }
+
+        .sidebar { width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border); position: fixed; height: 100vh; padding: 20px; box-sizing: border-box; z-index: 100; overflow-y: auto; }
+        .sidebar h2 { font-size: 11px; color: var(--primary); margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; font-weight: 800; text-align: center; }
+        .nav-group { font-size: 8px; color: #64748b; font-weight: 800; margin: 15px 0 5px 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .sidebar button { width: 100%; background: transparent; border: none; color: #94a3b8; padding: 10px 12px; text-align: left; border-radius: 4px; cursor: pointer; font-size: 10px; margin-bottom: 3px; transition: 0.2s; }
+        .sidebar button:hover { background: rgba(56, 189, 248, 0.1); color: white; }
+        .sidebar button.active { background: var(--accent); color: white; font-weight: 700; }
+
+        .main-content { margin-left: 250px; padding: 30px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: var(--sidebar-bg); padding: 15px; border-radius: 6px; border: 1px solid var(--border); border-top: 3px solid var(--primary); }
+        .stat-label { font-size: 8px; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+        .stat-val { font-family: 'JetBrains Mono'; font-size: 14px; font-weight: 700; margin-top: 5px; }
+
+        .card { background: var(--sidebar-bg); border: 1px solid var(--border); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .card h3 { margin-top: 0; font-size: 11px; color: var(--primary); text-transform: uppercase; border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 15px; }
+
+        .input-dark { padding: 10px; background: #000; border: 1px solid var(--border); color: white; border-radius: 4px; width: 100%; box-sizing: border-box; font-size: 11px; margin-bottom: 10px; }
+        .btn-primary { width: 100%; padding: 12px; background: var(--primary); border: none; font-weight: 800; cursor: pointer; border-radius: 4px; color: #000; transition: 0.3s; text-transform: uppercase; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px; border-bottom: 2px solid var(--border); color: var(--primary); }
+        td { padding: 10px; border-bottom: 1px solid var(--border); }
+
+        .footer { text-align: center; font-size: 10px; color: #475569; margin-top: 60px; padding: 30px; border-top: 1px solid var(--border); }
+        .res-box { padding: 15px; background: #000; border-radius: 4px; border-left: 4px solid var(--primary); margin-top: 10px; font-family: 'JetBrains Mono'; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div id="login" style="display: flex; justify-content: center; align-items: center; height: 100vh; background: #020617;">
+    <div style="background: var(--sidebar-bg); padding: 40px; border-radius: 12px; width: 350px; border: 1px solid var(--border); text-align: center;">
+        <h2 style="color:var(--primary); margin-bottom:30px">SISTEMA CONTABLE</h2>
+        <input id="userName" class="input-dark" placeholder="INGRESE NOMBRE DE USUARIO" style="text-align:center">
+        <input id="userSchool" class="input-dark" placeholder="EMPRESA / INSTITUCIÓN" style="text-align:center">
+        <button class="btn-primary" onclick="access()">ACCEDER</button>
+    </div>
+</div>
+
+<div id="app" style="display:none">
+    <aside class="sidebar">
+        <h2>PANEL DE CONTROL</h2>
+        <div class="nav-group">General</div>
+        <button onclick="nav('dashboard')" class="active">Panel Principal</button>
+        <button onclick="nav('diario')">Libro Diario</button>
+        <button onclick="nav('mayor')">Libro Mayor</button>
+        <button onclick="nav('balanza')">Balanza de Comprobación</button>
+
+        <div class="nav-group">Análisis Contable</div>
+        <button onclick="nav('resultados')">Estado de Resultados</button>
+        <button onclick="nav('razones')">Razones Financieras</button>
+        <button onclick="nav('puntoEq')">Punto de Equilibrio</button>
+
+        <div class="nav-group">Operaciones</div>
+        <button onclick="nav('bancos')">Conciliación Bancaria</button>
+        <button onclick="nav('depreciacion')">Depreciación</button>
+        <button onclick="nav('iva')">Cálculo de IVA</button>
+        <button onclick="nav('nomina')">Nómina y Vacaciones</button>
+        <button onclick="nav('aguinaldo')" style="color:var(--warning)">Calcular Aguinaldo</button>
+
+        <div class="nav-group">Información</div>
+        <button onclick="nav('manual')">¿Qué hace este Software?</button>
+        <button onclick="nav('perfil')" style="color:var(--primary)">Mi Información (CV)</button>
+        <button onclick="exportExcel()" style="color:var(--success)">Exportar Excel</button>
+        <button onclick="clearData()" style="color:var(--danger)">Limpiar Todo</button>
+    </aside>
+
+    <main class="main-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center">
+            <div><strong id="hSchool" style="color:var(--primary)"></strong> | USUARIO: <span id="hUser"></span></div>
+            <div id="reloj" style="font-family:'JetBrains Mono'; color:var(--primary)"></div>
+        </div>
+
+        <div class="grid-stats">
+            <div class="stat-card"><div class="stat-label">Activos Totales</div><div id="stAct" class="stat-val">$0.00</div></div>
+            <div class="stat-card"><div class="stat-label">Pasivos Totales</div><div id="stPas" class="stat-val">$0.00</div></div>
+            <div class="stat-card"><div class="stat-label">Capital Neto</div><div id="stCap" class="stat-val">$0.00</div></div>
+            <div class="stat-card"><div class="stat-label">Estado Libro</div><div id="stCheck">--</div></div>
+        </div>
+
+        <div id="v-dashboard" class="view">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px">
+                <div class="card"><h3>Estructura Financiera</h3><canvas id="chartPie"></canvas></div>
+                <div class="card"><h3>Balance Ingresos/Gastos</h3><canvas id="chartBar"></canvas></div>
+            </div>
+        </div>
+
+        <div id="v-diario" class="view" style="display:none">
+            <div class="card">
+                <h3>Registro de Asientos</h3>
+                <input type="hidden" id="editIndex" value="-1">
+                <div style="display:grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap:10px">
+                    <input id="fConc" class="input-dark" placeholder="Concepto">
+                    <input id="fCuen" class="input-dark" placeholder="Cuenta">
+                    <select id="fTipo" class="input-dark">
+                        <option value="activo">Activo</option><option value="pasivo">Pasivo</option>
+                        <option value="capital">Capital</option><option value="ingreso">Ingreso</option>
+                        <option value="gasto">Gasto</option>
+                    </select>
+                    <input id="fDebe" type="number" class="input-dark" placeholder="Debe">
+                    <input id="fHaber" type="number" class="input-dark" placeholder="Haber">
+                    <button class="btn-primary" onclick="processEntry()">OK</button>
+                </div>
+            </div>
+            <div class="card"><table><thead><tr><th>Concepto</th><th>Cuenta</th><th>Tipo</th><th>Debe</th><th>Haber</th><th>Acciones</th></tr></thead><tbody id="tableDiario"></tbody></table></div>
+        </div>
+
+        <div id="v-mayor" class="view" style="display:none"><div id="containerMayor" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap:15px"></div></div>
+        <div id="v-balanza" class="view" style="display:none"><div class="card"><h3>Balanza de Comprobación</h3><table id="tableBalanza"></table></div></div>
+        <div id="v-resultados" class="view" style="display:none"><div class="card"><h3>Estado de Resultados</h3><div id="resResultados" class="res-box"></div></div></div>
+        <div id="v-bancos" class="view" style="display:none"><div class="card"><h3>Conciliación Bancaria</h3><input id="bLib" type="number" class="input-dark" placeholder="Libros"><input id="bEst" type="number" class="input-dark" placeholder="Banco"><button class="btn-primary" onclick="calcBancos()">CONCILIAR</button><div id="resBancos" class="res-box"></div></div></div>
+        <div id="v-depreciacion" class="view" style="display:none"><div class="card"><h3>Depreciación</h3><input id="dVal" type="number" class="input-dark" placeholder="Valor"><input id="dVid" type="number" class="input-dark" placeholder="Años"><button class="btn-primary" onclick="calcDepre()">CALCULAR</button><div id="resDepre" class="res-box"></div></div></div>
+        <div id="v-puntoEq" class="view" style="display:none"><div class="card"><h3>Punto de Equilibrio</h3><input id="peCf" type="number" class="input-dark" placeholder="Costos Fijos"><input id="pePv" type="number" class="input-dark" placeholder="Precio Venta"><input id="peCv" type="number" class="input-dark" placeholder="Costo Var"><button class="btn-primary" onclick="calcPE()">CALCULAR</button><div id="resPE" class="res-box"></div></div></div>
+        <div id="v-nomina" class="view" style="display:none"><div class="card"><h3>Vacaciones</h3><input id="vAnios" type="number" class="input-dark" placeholder="Años"><button class="btn-primary" onclick="calcVac()">VER DÍAS</button><div id="resVac" class="res-box"></div></div></div>
+        <div id="v-iva" class="view" style="display:none"><div class="card"><h3>Calculadora IVA</h3><input id="ivaBase" type="number" class="input-dark" placeholder="Base"><button class="btn-primary" onclick="calcIVA()">CALCULAR</button><div id="resIVA" class="res-box"></div></div></div>
+        <div id="v-razones" class="view" style="display:none"><div class="card"><h3>Razones Financieras</h3><div id="resRazones" class="res-box"></div></div></div>
+        <div id="v-aguinaldo" class="view" style="display:none">
+            <div class="card">
+                <h3>Cálculo de Aguinaldo Proporcional</h3>
+                <input id="agSalario" type="number" class="input-dark" placeholder="Sueldo Mensual Bruto">
+                <input id="agDias" type="number" class="input-dark" placeholder="Días Trabajados en el Año">
+                <button class="btn-primary" onclick="calcAguinaldo()">CALCULAR PRESTACIÓN</button>
+                <div id="resAguinaldo" class="res-box"></div>
+            </div>
+        </div>
+
+        <div id="v-perfil" class="view" style="display:none">
+            <div class="card">
+                <h3>Información del Desarrollador</h3>
+                <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px">
+                    <div style="text-align:center; border-right:1px solid var(--border)">
+                        <div style="width:80px; height:80px; background:var(--primary); border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; color:#000; font-weight:800; font-size:24px">JM</div>
+                        <strong>ING. FRANCISCO JAVIER MARTÍNEZ RIVERA</strong>
+                    </div>
+                    <div>
+                        <strong>Forma de Contacto:</strong><br><br>
+                        <a href="https://franciscojaviermartinezriveraj-dot.github.io/CV-JAVIER-MARTINEZ/" target="_blank" class="btn-primary" style="display:inline-block; text-decoration:none; text-align:center; padding:10px 20px; width:auto">VER PORTAFOLIO Y CONTACTO</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="v-manual" class="view" style="display:none">
+            <div class="card">
+                <h3>Manual Técnico del Software</h3>
+                <div class="res-box">
+                    <strong>1. Procesamiento Contable:</strong> El software utiliza un motor de doble partida que valida en tiempo real la integridad del Libro Diario, asegurando que el total de cargos sea igual al de abonos. <br><br>
+                    <strong>2. Automatización de Mayor y Balanza:</strong> Mediante algoritmos de agrupación de datos, el sistema genera automáticamente el Libro Mayor por cuenta y la Balanza de Comprobación, eliminando errores de transcripción manual.<br><br>
+                    <strong>3. Inteligencia de Negocios (BI):</strong> Incorpora gráficos dinámicos que visualizan la solvencia (Activo/Pasivo) y el rendimiento operativo (Ingresos/Gastos), facilitando la toma de decisiones estratégicas.<br><br>
+                    <strong>4. Módulo de Prestaciones de Ley:</strong> Calcula de forma precisa los días de vacaciones basados en la antigüedad y determina aguinaldos proporcionales considerando el salario diario integrado.<br><br>
+                    <strong>5. Gestión Fiscal y Activos:</strong> Incluye herramientas de desglose de IVA y tablas de depreciación lineal para activos fijos, cumpliendo con estándares contables de control de capital.
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            SISTEMA CONTABLE PROFESIONAL - ING. FRANCISCO JAVIER MARTÍNEZ RIVERA © 2026
+        </div>
+    </main>
+</div>
+
+<script>
+    let entries = JSON.parse(localStorage.getItem('db_total_2026')) || [];
+    let pieChart, barChart;
+
+    function access() {
+        const u = document.getElementById('userName').value;
+        const s = document.getElementById('userSchool').value;
+        if(!u) return alert("Ingrese un nombre.");
+        document.getElementById('hSchool').innerText = s.toUpperCase() || "SISTEMA";
+        document.getElementById('hUser').innerText = u.toUpperCase();
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        initCharts(); refreshAll();
+    }
+
+    function calcAguinaldo() {
+        const s = parseFloat(document.getElementById('agSalario').value) || 0;
+        const d = parseInt(document.getElementById('agDias').value) || 0;
+        const res = ((s/30)*15/365)*d;
+        document.getElementById('resAguinaldo').innerHTML = `SALARIO DIARIO: $${(s/30).toFixed(2)}<br>AGUINALDO PROPORCIONAL: <strong>$${res.toFixed(2)}</strong>`;
+    }
+
+    function processEntry() {
+        const idx = parseInt(document.getElementById('editIndex').value);
+        const data = {
+            concepto: document.getElementById('fConc').value.toUpperCase(),
+            cuenta: document.getElementById('fCuen').value.toUpperCase(),
+            tipo: document.getElementById('fTipo').value,
+            debe: parseFloat(document.getElementById('fDebe').value) || 0,
+            haber: parseFloat(document.getElementById('fHaber').value) || 0
+        };
+        if(!data.concepto || !data.cuenta) return;
+        if(idx === -1) entries.push(data);
+        else { entries[idx] = data; document.getElementById('editIndex').value = "-1"; }
+        saveData(); resetFields();
+    }
+
+    function saveData() { localStorage.setItem('db_total_2026', JSON.stringify(entries)); refreshAll(); }
+    function resetFields() { document.getElementById('fConc').value=''; document.getElementById('fCuen').value=''; document.getElementById('fDebe').value=''; document.getElementById('fHaber').value=''; }
+
+    function refreshAll() {
+        renderDiario(); renderMayor(); renderBalanza();
+        renderResultados(); renderRazones();
+        updateStats(); updateCharts();
+    }
+
+    function nav(id) {
+        document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+        document.getElementById('v-' + id).style.display = 'block';
+        document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+        if(event) event.currentTarget.classList.add('active');
+    }
+
+    function renderResultados() {
+        let ing = 0, gas = 0;
+        entries.forEach(e => { if(e.tipo==='ingreso') ing+=e.haber; if(e.tipo==='gasto') gas+=e.debe; });
+        document.getElementById('resResultados').innerHTML = `VENTAS TOTALES: $${ing}<br>GASTOS TOTALES: $${gas}<br>-------------------<br>UTILIDAD NETA: $${ing-gas}`;
+    }
+
+    function calcBancos() {
+        const lib = parseFloat(document.getElementById('bLib').value) || 0;
+        const est = document.getElementById('bEst').value || 0;
+        const diff = lib - est;
+        document.getElementById('resBancos').innerText = diff === 0 ? "CONCILIADO CORRECTAMENTE" : `DIFERENCIA: $${diff}`;
+    }
+
+    function calcDepre() {
+        const v = document.getElementById('dVal').value;
+        const a = document.getElementById('dVid').value;
+        document.getElementById('resDepre').innerText = `DEPRECIACIÓN ANUAL: $${(v/a).toFixed(2)}`;
+    }
+
+    function calcPE() {
+        const cf = document.getElementById('peCf').value;
+        const pv = document.getElementById('pePv').value;
+        const cv = document.getElementById('peCv').value;
+        document.getElementById('resPE').innerText = `UNIDADES A VENDER: ${Math.ceil(cf/(pv-cv))}`;
+    }
+
+    function calcVac() {
+        const a = document.getElementById('vAnios').value;
+        let d = a*2 + 10; if(a > 5) d = 20 + (Math.floor(a/5)*2);
+        document.getElementById('resVac').innerText = `LE CORRESPONDEN: ${d} DÍAS`;
+    }
+
+    function calcIVA() {
+        const b = document.getElementById('ivaBase').value;
+        document.getElementById('resIVA').innerText = `IVA: $${(b*0.16).toFixed(2)} | TOTAL: $${(b*1.16).toFixed(2)}`;
+    }
+
+    function renderRazones() {
+        let act = 0, pas = 0;
+        entries.forEach(e => { if(e.tipo==='activo') act+=(e.debe-e.haber); if(e.tipo==='pasivo') pas+=(e.haber-e.debe); });
+        const liq = pas !== 0 ? (act/pas).toFixed(2) : "N/A";
+        document.getElementById('resRazones').innerHTML = `PRUEBA DE LIQUIDEZ: ${liq}<br>(Activo / Pasivo)`;
+    }
+
+    function renderDiario() {
+        let h = '';
+        entries.forEach((e, i) => {
+            h += `<tr><td>${e.concepto}</td><td>${e.cuenta}</td><td>${e.tipo}</td><td>$${e.debe}</td><td>$${e.haber}</td>
+            <td><button onclick="editEntry(${i})">E</button> <button onclick="deleteEntry(${i})">X</button></td></tr>`;
+        });
+        document.getElementById('tableDiario').innerHTML = h;
+    }
+
+    function editEntry(i) {
+        const e = entries[i];
+        document.getElementById('fConc').value=e.concepto; document.getElementById('fCuen').value=e.cuenta;
+        document.getElementById('fTipo').value=e.tipo; document.getElementById('fDebe').value=e.debe;
+        document.getElementById('fHaber').value=e.haber; document.getElementById('editIndex').value=i;
+        nav('diario');
+    }
+
+    function deleteEntry(i) { entries.splice(i,1); saveData(); }
+
+    function updateStats() {
+        let td=0, th=0, act=0, pas=0, cap=0;
+        entries.forEach(e => {
+            td+=e.debe; th+=e.haber;
+            if(e.tipo==='activo') act+=(e.debe-e.haber);
+            if(e.tipo==='pasivo') pas+=(e.haber-e.debe);
+            if(e.tipo==='capital') cap+=(e.haber-e.debe);
+        });
+        document.getElementById('stAct').innerText = `$${act}`;
+        document.getElementById('stPas').innerText = `$${pas}`;
+        document.getElementById('stCap').innerText = `$${cap}`;
+        document.getElementById('stCheck').innerText = Math.abs(td-th)<1 ? "CUADRADO" : "ERROR";
+    }
+
+    function initCharts() {
+        pieChart = new Chart(document.getElementById('chartPie'), {
+            type: 'doughnut', data: { labels: ['Activos', 'Pasivos', 'Capital'], datasets: [{ data: [0,0,0], backgroundColor: ['#38bdf8', '#f43f5e', '#fbbf24'] }] },
+            options: { plugins: { legend: { labels: { color: 'white' } } } }
+        });
+        barChart = new Chart(document.getElementById('chartBar'), {
+            type: 'bar', data: { labels: ['Ingresos', 'Gastos'], datasets: [{ label: 'Pesos', data: [0,0], backgroundColor: ['#10b981', '#6366f1'] }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { ticks: { color: 'white' } } } }
+        });
+    }
+
+    function updateCharts() {
+        if(!pieChart) return;
+        let a=0, p=0, c=0, ing=0, gas=0;
+        entries.forEach(e => {
+            if(e.tipo === 'activo') a += (e.debe - e.haber);
+            if(e.tipo === 'pasivo') p += (e.haber - e.debe);
+            if(e.tipo === 'capital') c += (e.haber - e.debe);
+            if(e.tipo === 'ingreso') ing += e.haber;
+            if(e.tipo === 'gasto') gas += e.debe;
+        });
+        pieChart.data.datasets[0].data = [a, p, c]; pieChart.update();
+        barChart.data.datasets[0].data = [ing, gas]; barChart.update();
+    }
+
+    function renderMayor() {
+        const cont = document.getElementById('containerMayor'); cont.innerHTML = '';
+        const accs = {};
+        entries.forEach(e => { if(!accs[e.cuenta]) accs[e.cuenta] = {d:0, h:0}; accs[e.cuenta].d += e.debe; accs[e.cuenta].h += e.haber; });
+        for(let a in accs) { cont.innerHTML += `<div class="card" style="text-align:center"><strong>${a}</strong><br>D: $${accs[a].d} | H: $${accs[a].h}</div>`; }
+    }
+
+    function renderBalanza() {
+        let h = '<thead><tr><th>Cuenta</th><th>Debe</th><th>Haber</th></tr></thead><tbody>';
+        const b = {};
+        entries.forEach(e => { if(!b[e.cuenta]) b[e.cuenta]={d:0,h:0}; b[e.cuenta].d+=e.debe; b[e.cuenta].h+=e.haber; });
+        for(let a in b) { h += `<tr><td>${a}</td><td>$${b[a].d}</td><td>$${b[a].h}</td></tr>`; }
+        document.getElementById('tableBalanza').innerHTML = h + '</tbody>';
+    }
+
+    function exportExcel() { const ws=XLSX.utils.json_to_sheet(entries); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"Data"); XLSX.writeFile(wb, "Contabilidad_Completa.xlsx"); }
+    function clearData() { if(confirm("¿Borrar todo?")) { entries=[]; saveData(); } }
+    setInterval(() => { if(document.getElementById('reloj')) document.getElementById('reloj').innerText = new Date().toLocaleTimeString(); }, 1000);
+</script>
+</body>
+</html>
